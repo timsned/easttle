@@ -173,7 +173,7 @@
                                 "name":`${data[i]['First Name']} ${data[i]['Last Name']}`,
                                 "ethnicity":data[i]['Ethnicity'],
                                 "score":parseInt(data[i]['Overall Score']),
-                                "test_name":data[i]['Test Name']
+                                "testName":data[i]['Test Name']
                             }
                         )
                         includedNames.push(`${data[i]['First Name']} ${data[i]['Last Name']}`)
@@ -247,9 +247,9 @@
             var matchedNames = [];
 
             console.log(classState1)
-            document.getElementById('test-name-1').innerText = classState1[0].test_name
-            document.getElementById('test-name-2').innerText = classState2[0].test_name
-            csvContent.push(['Name', classState1[0].test_name, classState2[0].test_name, 'Improvement'])
+            document.getElementById('test-name-1').innerText = classState1[0].testName
+            document.getElementById('test-name-2').innerText = classState2[0].testName
+            csvContent.push(['Name', classState1[0].testName, classState2[0].testName, 'Improvement'])
 
             for (let i=0; i<classState1.length; i++) {
                 var name = classState1[i]['name'];
