@@ -1,0 +1,384 @@
+<html>
+
+    
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="https://use.fontawesome.com/2e8b4ba78c.js"></script>
+        <script src="https://cdn.plot.ly/plotly-2.4.2.min.js"></script>
+    </head>
+
+    <div class="container-fluid">
+        <div class="row p-4 mt-4">
+            <div class="col-1">
+
+            </div>
+            <div class="col-5">
+                <h2>e-asTTle analysis tool</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-1">
+
+            </div>
+            <div class="col-5">
+                <div class="card p-4">
+                    <h4>Level</h4>
+                    <select name="level-select" id="level-select" class="form-control" onchange="selectLevel(); clearAnalysis()">
+                        <option value="y9-0">Year 9: beginning of year</option>
+                        <option value="y9-1">Year 9: end of year</option>
+                        <option value="y10-0">Year 10: beginning of year</option>
+                        <option value="y10-1">Year 10: end of year</option>
+                    </select>
+                    <p class="mt-4">At expected level: lower bound</p>
+                    <input class="form-control" type="number" id="lower-bound" value="1470" onchange="clearAnalysis()">
+                    <p class="mt-4">At expected level: upper bound</p>
+                    <input class="form-control" type="number" id="upper-bound" value="1555" onchange="clearAnalysis()">
+                    <h4 class="mt-4">Upload data file</h4>
+                    <input id="csvfile" type="file" class="form control" onchange="clearAnalysis()">
+                    <button class="btn btn-primary mt-4" onclick="analyze()">Analyse</button>
+                </div>
+                <div id="overall-percent" class="card p-4 mt-4">
+                    <h4>Overall Results</h4>
+                    <p>Above: <strong id="overall-above"></strong></p>
+                    <p>At: <strong id="overall-at"></strong></p>
+                    <p>Below: <strong id="overall-below"></strong></p>
+                </div>
+                <div id="ethnicity-percent" class="card p-4 mt-4">
+
+                </div>
+            </div>
+            <div class="col-6">
+                <div id="plotDiv">
+
+                </div>
+                <div id="plotDiv2">
+
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-1">
+
+            </div>
+            <div class="col-6 mt-4">
+                <h4>Students at each level (lowest to highest scores)</h4>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-1"></div>
+            <div class="col-3">
+                <div class="card p-4">
+                    <h4>Below</h4>
+                    <div class="mt-4" id="below-students">
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="card p-4">
+                    <h4>At</h4>
+                    <div class="mt-4" id="at-students">
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="card p-4">
+                    <h4>Above</h4>
+                    <div class="mt-4" id="above-students">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+
+        function clearAnalysis() {
+            var parentsToClear = [
+                document.getElementById('below-students'),
+                document.getElementById('at-students'),
+                document.getElementById('above-students'),
+                document.getElementById('plotDiv'),
+                document.getElementById('plotDiv2'),
+            ]
+            for (let i=0; i<parentsToClear.length; i++) {
+                while (parentsToClear[i].firstChild) {
+                    parentsToClear[i].removeChild(parentsToClear[i].firstChild)
+                }
+            }
+            removeEthnicityDisplay()
+        }
+
+        function compare( a, b ) {
+        if ( a['score'] < b['score'] ){
+            return -1;
+        }
+        if ( a['score'] > b['score'] ){
+            return 1;
+        }
+        return 0;
+        }
+
+
+        function displayStudentsAtLevel(upper, lower, data) {
+            var studentMap = {'below':[], 'at':[], 'above':[]}
+            for (let i=0; i<data.length; i++) {
+                if (parseInt(data[i]['Overall Score']) < lower) {
+                    var studentName = data[i]['First Name'] + ' ' + data[i]['Last Name']
+                    var score = parseInt(data[i]['Overall Score'])
+                    var scoreCode = data[i]['Overall Level']
+                    if (studentName && score && scoreCode) {
+                        studentMap['below'].push({'name':studentName, 'score':score, 'code':scoreCode})
+                    }
+                } else if (parseInt(data[i]['Overall Score']) > lower) {
+                    if (parseInt(data[i]['Overall Score']) < upper) {
+                        var studentName = data[i]['First Name'] + ' ' + data[i]['Last Name']
+                        var score = parseInt(data[i]['Overall Score'])
+                        var scoreCode = data[i]['Overall Level']
+                        if (studentName && score && scoreCode) {
+                            studentMap['at'].push({'name':studentName, 'score':score, 'code':scoreCode})
+                        }
+                    } else {
+                        var studentName = data[i]['First Name'] + ' ' + data[i]['Last Name']
+                        var score = parseInt(data[i]['Overall Score'])
+                        var scoreCode = data[i]['Overall Level']
+                        if (studentName && score && scoreCode) {
+                            studentMap['above'].push({'name':studentName, 'score':score, 'code':scoreCode})
+                        }
+                    }
+                }
+            }
+            console.log(studentMap)
+            studentMap['below'].sort(compare);
+            studentMap['at'].sort(compare);
+            studentMap['above'].sort(compare);
+            var belowStudentsList = document.getElementById('below-students')
+            var atStudentsList = document.getElementById('at-students')
+            var aboveStudentsList = document.getElementById('above-students')
+            for (let i=0; i<studentMap['below'].length; i++) {
+                var studentP = document.createElement('p')
+                studentP.innerHTML = `<span>${studentMap['below'][i]['name']}</span> <span style="float:right;">${studentMap['below'][i]['code']}</span>`
+                belowStudentsList.appendChild(studentP)   
+                belowStudentsList.appendChild(document.createElement('hr'))
+            }
+            for (let i=0; i<studentMap['at'].length; i++) {
+                var studentP = document.createElement('p')
+                studentP.innerHTML = `<span>${studentMap['at'][i]['name']}</span> <span style="float:right;">${studentMap['at'][i]['code']}</span>`
+                atStudentsList.appendChild(studentP)   
+                atStudentsList.appendChild(document.createElement('hr'))
+            }
+            for (let i=0; i<studentMap['above'].length; i++) {
+                var studentP = document.createElement('p')
+                studentP.innerHTML = `<span>${studentMap['above'][i]['name']}</span> <span style="float:right;">${studentMap['above'][i]['code']}</span>`
+                aboveStudentsList.appendChild(studentP)   
+                aboveStudentsList.appendChild(document.createElement('hr'))
+            }
+        }
+
+
+        function selectLevel() {
+            var level = document.getElementById('level-select').value;
+            const levels = {
+                'y9-0': {'lower':1470, 'upper':1555}, 
+                'y9-1': {'lower':1502, 'upper':1586}, 
+                'y10-0': {'lower':1502, 'upper':1586}, 
+                'y10-1':{'lower':1556, 'upper':1617}
+            }
+            document.getElementById('lower-bound').value = levels[level]['lower'];
+            document.getElementById('upper-bound').value = levels[level]['upper'];
+        }
+
+        function levelSplit(upper, lower, data) {
+            var outputs = {'total':0, 'below':0, 'at':0, 'above':0}
+            for (let i=0; i<data.length; i++) {
+                if (parseInt(data[i]['Overall Score']) < lower) {
+                    outputs['total']++;
+                    outputs['below']++;
+                } else if (parseInt(data[i]['Overall Score']) > lower) {
+                    if (parseInt(data[i]['Overall Score']) < upper) {
+                        outputs['total']++;
+                        outputs['at']++;
+                    } else {
+                        outputs['total']++;
+                        outputs['above']++;
+                    }
+                }
+            }
+            return outputs
+        }
+
+
+        function displayOveralls(upperBound, lowerBound, data) {
+            var levels = levelSplit(upperBound, lowerBound, data);
+            var below_percent = Math.round(levels['below']/levels['total'] * 100)
+            var at_percent = Math.round(levels['at']/levels['total'] * 100)
+            var above_percent = Math.round(levels['above']/levels['total'] * 100)
+            var percentObj = {'below':below_percent, 'at':at_percent, 'above':above_percent}
+            document.getElementById('overall-above').innerText = percentObj['above'] + '%' + ' - ' + levels['above'] + ' students'
+            document.getElementById('overall-at').innerText = percentObj['at'] + '%' + ' - ' + levels['at'] + ' students';
+            document.getElementById('overall-below').innerText = percentObj['below'] + '%' + ' - ' + levels['below'] + ' students';
+        }
+
+
+        function getscoresByEthnicities(upperBound, lowerBound, data) {
+            var resultList = [];
+            for (let i=0; i<data.length; i++) {
+                var has_eth = false;
+                if (resultList.length > 0) { 
+                    for (let j=0; j<resultList.length; j++) {
+                        if (resultList[j]['ethnicity'] == data[i]['Ethnicity']) {
+                            has_eth =true;
+                        }
+                    }
+                }
+                if (has_eth) {
+                    for (let k=0; k<resultList.length; k++) {
+                        if (resultList[k]['ethnicity'] == data[i]['Ethnicity']) {
+                            resultList[k]['results'].push(data[i]['Overall Score'])
+                        }
+                    }
+                } else {
+                    resultList.push({'ethnicity':data[i]['Ethnicity'], 'results':[data[i]['Overall Score']]})
+                }
+            }
+            barCharts = []
+            for (let h=0; h<resultList.length; h++) {
+                var barDisp = displayEthnicity(upperBound, lowerBound, resultList[h]['ethnicity'], resultList[h]['results'])
+                if (barDisp) {
+                    barCharts.push(barDisp)
+                }
+            }
+            return barCharts
+        }
+
+
+        function displayEthnicity(upperBound, lowerBound, ethnicity, results) {
+            if (ethnicity) {
+                var outputs = {'total':0, 'below':0, 'at':0, 'above':0}
+                for (let i=0; i<results.length; i++) {
+                    if (results[i] < lowerBound) {
+                        outputs['total'] ++
+                        outputs['below'] ++
+                    } else {
+                        if (results[i] < upperBound) {
+                            outputs['total'] ++
+                            outputs['at'] ++
+                        } else {
+                            outputs['total'] ++
+                            outputs['above'] ++
+                        }
+                    }
+                }
+                var below_percent = Math.round(outputs['below']/outputs['total'] * 100)
+                var at_percent = Math.round(outputs['at']/outputs['total'] * 100)
+                var above_percent = Math.round(outputs['above']/outputs['total'] * 100)
+                var percentObj = {'below':below_percent, 'at':at_percent, 'above':above_percent}
+                var ethnicityDisplay = document.getElementById('ethnicity-percent');
+                var thisSection = document.createElement('div')
+                var thisSectionHtml = `<h4>${ethnicity}</h4>
+                        <p>Above: <strong id="overall-above-${ethnicity}">${above_percent}% - ${outputs['above']} students</strong></p>
+                        <p>At: <strong id="overall-at-${ethnicity}">${at_percent}% - ${outputs['at']} students</strong></p>
+                        <p>Below: <strong id="overall-below-${ethnicity}">${below_percent}% - ${outputs['below']} students</strong></p>`
+                thisSection.innerHTML = thisSectionHtml;
+                ethnicityDisplay.appendChild(thisSection);
+                return {
+                    'ethnicity':ethnicity,
+                    'below':outputs['below'],
+                    'at':outputs['at'],
+                    'above':outputs['above'],
+                    'below_percent':below_percent,
+                    'at_percent':at_percent,
+                    'above_percent':above_percent
+                };
+            }
+        }
+
+
+        function removeEthnicityDisplay() {
+            var ethContainer = document.getElementById('ethnicity-percent');
+            while (ethContainer.firstChild) {
+                ethContainer.removeChild(ethContainer.firstChild)
+            }
+        }
+
+
+        function analyze() {
+            removeEthnicityDisplay()
+            const lowerBound = document.getElementById('lower-bound').value;
+            const upperBound = document.getElementById('upper-bound').value;
+            const csvfile = document.getElementById('csvfile').files[0];
+            const reader = new FileReader();
+            reader.readAsText(csvfile)
+            reader.onload = function (e) {
+                const text = e.target.result;
+                const data = csvToArray(text);
+                displayOveralls(upperBound, lowerBound, data);
+                var ethResults = getscoresByEthnicities(upperBound, lowerBound, data)
+                const items = ['below', 'at', 'above']
+                const colors = ['rgba(255,0,0,1)', 'rgba(0,255,0,1)', 'rgba(0,0,255,1']
+                ethnicities = [];
+                barGroups = []
+                for (let i=0; i<ethResults.length; i++) {
+                    ethnicities.push(ethResults[i]['ethnicity'])
+                }
+                for (let i=0; i<items.length; i++) {
+                    var groupObj = {x:ethnicities, y:[], name:items[i], type:'bar', marker:{color:[]}}
+                    for (let j=0; j<ethResults.length; j++) {
+                        groupObj.y.push(ethResults[j][items[i]])
+                        groupObj.marker.color.push(colors[i])
+                    }
+                    barGroups.push(groupObj)
+                }
+
+                var layout = {title:'Level by ethnicity, total students', barmode: 'group', yaxis: {title: 'Number of students'}, legend: {x: 1, xanchor: 'right', y: 1}};
+                console.log(barGroups)
+                Plotly.newPlot('plotDiv2', barGroups, layout);
+
+
+                //bar chart 2
+                barGroups2 = []
+                for (let i=0; i<items.length; i++) {
+                    var groupObj2 = {x:ethnicities, y:[], name:items[i], type:'bar', marker:{color:[]}}
+                    for (let j=0; j<ethResults.length; j++) {
+                        groupObj2.y.push(ethResults[j][items[i] + '_percent'])
+                        groupObj2.marker.color.push(colors[i])
+                    }
+                    barGroups2.push(groupObj2)
+                }
+
+                var layout2 = {title:'Level by ethnicity, percentage', barmode: 'group', yaxis: {title: 'Percentage of students'}, legend: {x: 1, xanchor: 'right', y: 1}};
+                console.log(barGroups2)
+                Plotly.newPlot('plotDiv', barGroups2, layout2);
+                displayStudentsAtLevel(upperBound, lowerBound, data)
+            };
+        }
+
+        function csvToArray(str, delimiter = ",") {
+            // slice from start of text to the first \n index
+            // use split to create an array from string by delimiter
+            const headers = str.slice(0, str.indexOf("\n")).split(delimiter);
+
+            // slice from \n index + 1 to the end of the text
+            // use split to create an array of each csv value row
+            const rows = str.slice(str.indexOf("\n") + 1).split("\n");
+            const arr = rows.map(function (row) {
+                const values = row.split(delimiter);
+                const el = headers.reduce(function (object, header, index) {
+                object[header] = values[index];
+                return object;
+            }, {});
+            return el;
+        });
+
+        // return the array
+        return arr;
+        }
+
+    </script>
+</html>
