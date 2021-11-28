@@ -109,28 +109,19 @@
                 </div>
                 <div class="col-2">
                     <p><b>Name</b></p>
-                    <div id="name-data">
-
-                    </div>
                 </div>
                 <div class="col-2">
                     <p><b id="test-name-1"></b></p>
-                    <div id="class-1-data">
-
-                    </div>
                 </div>
                 <div class="col-2">
                     <p><b id="test-name-2"></b></p>
-                    <div id="class-2-data">
-
-                    </div>
                 </div>
                 <div class="col-1">
                     <p><b>Improvement</b></p>
-                    <div id="improvement-data">
-
-                    </div>
                 </div>
+            </div>
+            <div id="data-table">
+                
             </div>
         </div>
         
@@ -173,7 +164,8 @@
                                 "name":`${data[i]['First Name']} ${data[i]['Last Name']}`,
                                 "ethnicity":data[i]['Ethnicity'],
                                 "score":parseInt(data[i]['Overall Score']),
-                                "testName":data[i]['Test Name']
+                                "testName":data[i]['Test Name'],
+                                'level':data[i]['Overall Level']
                             }
                         )
                         includedNames.push(`${data[i]['First Name']} ${data[i]['Last Name']}`)
@@ -245,7 +237,10 @@
 
         function buildStudentData() {
             var matchedNames = [];
+            var orderedScores = [];
+            var orderedNodes = [];
 
+            console.log('yo')
             console.log(classState1)
             document.getElementById('test-name-1').innerText = classState1[0].testName
             document.getElementById('test-name-2').innerText = classState2[0].testName
@@ -262,6 +257,8 @@
                             var newClass1 = document.createElement('p');
                             var newClass2 = document.createElement('p');
                             var newImprovement = document.createElement('p');
+                            
+
                             
                             if (isNaN(classState2[j].score) || isNaN(classState1[i].score)) {
                                 var studentImprovement = 0; 
@@ -286,21 +283,21 @@
                             if (isNaN(classState1[i].score)) {
                                 newClass1.innerText = '---';
                             } else if (classState1[i].score < levelDataLower1) {
-                                newClass1.innerText = 'below';
+                                newClass1.innerText = `below - ${classState1[i].level}`;
                             } else if (classState1[i].score > levelDataUpper1) {
-                                newClass1.innerText = 'above';
+                                newClass1.innerText = `above - ${classState1[i].level}`;
                             } else {
-                                newClass1.innerText = 'at';
+                                newClass1.innerText = `at - ${classState1[i].level}`;
                             }
 
                             if (isNaN(classState2[j].score)) {
                                 newClass2.innerText = '---';
                             } else if (classState2[j].score < levelDataLower2) {
-                                newClass2.innerText = 'below';
+                                newClass2.innerText = `below - ${classState2[j].level}`;
                             } else if (classState1[j].score > levelDataUpper2) {
-                                newClass2.innerText = 'above';
+                                newClass2.innerText = `above - ${classState2[j].level}`;
                             } else {
-                                newClass2.innerText = 'at';
+                                newClass2.innerText = `at - ${classState2[j].level}`;
                             }
 
                             if (isNaN(classState2[j].score) || isNaN(classState1[i].score)) {
@@ -308,15 +305,47 @@
                             } else {
                                 newImprovement.innerText = `${classState2[j].score - classState1[i].score}`
                             }
-                            document.getElementById('name-data').appendChild(newName)
-                            document.getElementById('class-1-data').appendChild(newClass1)
-                            document.getElementById('class-2-data').appendChild(newClass2)
-                            document.getElementById('improvement-data').appendChild(newImprovement)
+
+                            var newNode = document.createElement('div')
+                            newNode.classList.add('row')
+                            var spacerCol = document.createElement('div')
+                            spacerCol.classList.add('col-2')
+                            newNode.appendChild(spacerCol)
+
+                            
+                            var rowContent = [newName, newClass1, newClass2, newImprovement]
+
+                            for (let i=0; i<rowContent.length; i++) {
+                                var newCol = document.createElement('div')
+                                newCol.classList.add('col-2')
+                                newCol.appendChild(rowContent[i])
+                                newNode.appendChild(newCol)
+                            }
+
+                            if (orderedScores.length == 0) {
+                                orderedScores.splice(0, 0, classState2[j].score)
+                                orderedNodes.splice(0, 0, newNode)
+                            } else {
+                                for (let i=0; i<orderedScores.length; i++) {
+                                    if (classState2[j].score < orderedScores[i]) {
+                                        orderedScores.splice(i, 0, classState2[j].score)
+                                        orderedNodes.splice(i, 0, newNode);
+                                        break
+                                    } 
+                                }
+                            }
 
                             csvContent.push([newName.innerText, newClass1.innerText, newClass2.innerText, newImprovement.innerText])
                         }
                     }
                 }
+            }
+            console.log(`ordered: ${orderedNodes.length}`)
+            for (let i=0; i<orderedNodes.length; i++) {
+                var hrRow = document.createElement('div')
+                hrRow.innerHTML = `<hr>`
+                document.getElementById('data-table').appendChild(hrRow)
+                document.getElementById('data-table').appendChild(orderedNodes[i])
             }
             for (let i=0; i<classState1.length; i++) {
                 if (!matchedNames.includes(classState1[i].name)) {
@@ -329,11 +358,11 @@
                     if (isNaN(classState1[i].score)) {
                         newClass1.innerText = '---';
                     } else if (classState1[i].score < levelDataLower1) {
-                        newClass1.innerText = 'below';
+                        newClass1.innerText = `below - ${classState1[i].level}`;
                     } else if (classState1[i].score > levelDataUpper1) {
-                        newClass1.innerText = 'above';
+                        newClass1.innerText = `above - ${classState1[i].level}`;
                     } else {
-                        newClass1.innerText = 'at';
+                        newClass1.innerText = `at - ${classState1[i].level}`;
                     }
 
                     newClass2.innerText = '---'
@@ -357,11 +386,11 @@
                     if (isNaN(classState2[i].score)) {
                         newClass2.innerText = '---';
                     } else if (classState2[i].score < levelDataLower2) {
-                        newClass2.innerText = 'below';
+                        newClass2.innerText = `below - ${classState1[j].level}`;
                     } else if (classState2[i].score > levelDataUpper2) {
-                        newClass2.innerText = 'above';
+                        newClass2.innerText = `above - ${classState1[j].level}`;
                     } else {
-                        newClass2.innerText = 'at';
+                        newClass2.innerText = `at - ${classState1[j].level}`;
                     }
 
                     newClass1.innerText = '---'
