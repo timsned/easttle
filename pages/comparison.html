@@ -11,12 +11,12 @@
         <script src="https://cdn.plot.ly/plotly-2.4.2.min.js"></script>
     </head>
 
-    <div class="container-fluid">
+    <div class="container-fluid" style="margin-bottom: 300px;">
         <div class="row p-4 mt-4">
             <div class="col-1">
 
             </div>
-            <div class="col-3">
+            <div class="col-4">
                 <h2>e-asTTle comparison tool</h2>
             
                 <div class="card p-4">
@@ -70,18 +70,18 @@
                     </div>
                 </div>
             </div>
-            <div class="col-7">
+            <div class="col-6">
                 <div id="stats-div" hidden>
                     <div class="row">
                         <div class="col">
-                            <h4>Input 1</h4>
+                            <h4 id="input-1-title">Input 1</h4>
                             <p>Total: <b id="class-1-total"></b></p>
                             <p>Above: <b id="class-1-above"></b></p>
                             <p>At: <b id="class-1-at"></b></p>
                             <p>Below: <b id="class-1-below"></b></p>
                         </div>
                         <div class="col">
-                            <h4>Input 2</h4>
+                            <h4 id="input-2-title">Input 2</h4>
                             <p>Total: <b id="class-2-total"></b></p>
                             <p>Above: <b id="class-2-above"></b></p>
                             <p>At: <b id="class-2-at"></b></p>
@@ -192,10 +192,14 @@
                 data = classState1
                 levelDataLower = levelDataLower1
                 levelDataUpper = levelDataUpper1
+                dataObj.title = classState1[0].testName
+                document.getElementById('input-1-title').innerText = classState1[0].testName
             } else {
                 data = classState2
                 levelDataLower = levelDataLower2
                 levelDataUpper = levelDataUpper2
+                dataObj.title = classState2[0].testName
+                document.getElementById('input-2-title').innerText = classState2[0].testName
             }
             for (let i=0; i<data.length; i++) {
                 if (data[i].score < levelDataLower) {
@@ -216,14 +220,14 @@
             var trace1 = {
                 x: ['below', 'at', 'above'],
                 y: [class1['below'], class1['at'], class1['above']],
-                name: 'Class 1',
+                name: class1['title'],
                 type: 'bar'
                 };
 
             var trace2 = {
                 x: ['below', 'at', 'above'],
                 y: [class2['below'], class2['at'], class2['above']],
-                name: 'Class 2',
+                name: class2['title'],
                 type: 'bar'
                 };
 
@@ -236,15 +240,16 @@
 
 
         function buildStudentData() {
-            var matchedNames = [];
-            var orderedScores = [];
-            var orderedNodes = [];
-
-            console.log('yo')
             console.log(classState1)
+            console.log(classState2)
+            var matchedNames = [];
+            const scores = [];
+            const nodes = [];
+
+
             document.getElementById('test-name-1').innerText = classState1[0].testName
             document.getElementById('test-name-2').innerText = classState2[0].testName
-            csvContent.push(['Name', classState1[0].testName, classState2[0].testName, 'Improvement'])
+            csvContent.push(['Name', classState1[0].testName, `${classState1[0].testName} cut score`, classState2[0].testName, `${classState2[0].testName} cut score`, 'Improvement'])
 
             for (let i=0; i<classState1.length; i++) {
                 var name = classState1[i]['name'];
@@ -266,12 +271,12 @@
                                 var studentImprovement = classState2[j].score - classState1[i].score;
                             }
 
-                            if (studentImprovement > 100) {
+                            if (studentImprovement > 25) {
                                 newName.style.color = 'limegreen'
                                 newClass1.style.color = 'limegreen'
                                 newClass2.style.color = 'limegreen'
                                 newImprovement.style.color = 'limegreen'
-                            } else if (studentImprovement < -100) {
+                            } else if (studentImprovement < -25) {
                                 newName.style.color = 'red'
                                 newClass1.style.color = 'red'
                                 newClass2.style.color = 'red'
@@ -321,86 +326,21 @@
                                 newCol.appendChild(rowContent[i])
                                 newNode.appendChild(newCol)
                             }
+                            nodes.push(newNode);
+                            scores.push(classState2[j].score)
 
-                            if (orderedScores.length == 0) {
-                                orderedScores.splice(0, 0, classState2[j].score)
-                                orderedNodes.splice(0, 0, newNode)
-                            } else {
-                                for (let i=0; i<orderedScores.length; i++) {
-                                    if (classState2[j].score < orderedScores[i]) {
-                                        orderedScores.splice(i, 0, classState2[j].score)
-                                        orderedNodes.splice(i, 0, newNode);
-                                        break
-                                    } 
-                                }
-                            }
-
-                            csvContent.push([newName.innerText, newClass1.innerText, newClass2.innerText, newImprovement.innerText])
+                            csvContent.push([newName.innerText, classState1[i].score, classState1[i].level, classState2[j].score, classState2[j].level, newImprovement.innerText])
                         }
                     }
                 }
             }
-            console.log(`ordered: ${orderedNodes.length}`)
-            for (let i=0; i<orderedNodes.length; i++) {
+
+
+            for (let i=0; i<nodes.length; i++) {
                 var hrRow = document.createElement('div')
                 hrRow.innerHTML = `<hr>`
                 document.getElementById('data-table').appendChild(hrRow)
-                document.getElementById('data-table').appendChild(orderedNodes[i])
-            }
-            for (let i=0; i<classState1.length; i++) {
-                if (!matchedNames.includes(classState1[i].name)) {
-                    var newName = document.createElement('p');
-                    var newClass1 = document.createElement('p');
-                    var newClass2 = document.createElement('p');
-                    var newImprovement = document.createElement('p');
-                    newName.innerText = classState1[i].name;
-                    
-                    if (isNaN(classState1[i].score)) {
-                        newClass1.innerText = '---';
-                    } else if (classState1[i].score < levelDataLower1) {
-                        newClass1.innerText = `below - ${classState1[i].level}`;
-                    } else if (classState1[i].score > levelDataUpper1) {
-                        newClass1.innerText = `above - ${classState1[i].level}`;
-                    } else {
-                        newClass1.innerText = `at - ${classState1[i].level}`;
-                    }
-
-                    newClass2.innerText = '---'
-                    newImprovement.innerText = '---'
-                    document.getElementById('name-data').appendChild(newName)
-                    document.getElementById('class-1-data').appendChild(newClass1)
-                    document.getElementById('class-2-data').appendChild(newClass2)
-                    document.getElementById('improvement-data').appendChild(newImprovement)
-
-                    csvContent.push([newName.innerText, newClass1.innerText, newClass2.innerText, newImprovement.innerText])
-                }
-            }
-            for (let i=0; i<classState2.length; i++) {
-                if (!matchedNames.includes(classState2[i].name)) {
-                    var newName = document.createElement('p');
-                    var newClass1 = document.createElement('p');
-                    var newClass2 = document.createElement('p');
-                    var newImprovement = document.createElement('p');
-                    newName.innerText = classState2[i].name;
-                    
-                    if (isNaN(classState2[i].score)) {
-                        newClass2.innerText = '---';
-                    } else if (classState2[i].score < levelDataLower2) {
-                        newClass2.innerText = `below - ${classState1[j].level}`;
-                    } else if (classState2[i].score > levelDataUpper2) {
-                        newClass2.innerText = `above - ${classState1[j].level}`;
-                    } else {
-                        newClass2.innerText = `at - ${classState1[j].level}`;
-                    }
-
-                    newClass1.innerText = '---'
-                    newImprovement.innerText = '---'
-                    document.getElementById('name-data').appendChild(newName)
-                    document.getElementById('class-1-data').appendChild(newClass1)
-                    document.getElementById('class-2-data').appendChild(newClass2)
-                    document.getElementById('improvement-data').appendChild(newImprovement)
-                    csvContent.push([newName.innerText, newClass1.innerText, newClass2.innerText, newImprovement.innerText])
-                }
+                document.getElementById('data-table').appendChild(nodes[i])
             }
         }
 
